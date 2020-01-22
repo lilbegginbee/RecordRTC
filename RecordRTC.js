@@ -2037,7 +2037,7 @@ function MediaStreamRecorder(mediaStream, config) {
         throw 'First argument "MediaStream" is required.';
     }
 
-    if (typeof MediaRecorder === 'undefined') {
+    if (typeof config.recorderMp3 === 'undefined' && typeof MediaRecorder === 'undefined') {
         throw 'Your browser does not support the Media Recorder API. Please try other modules e.g. WhammyRecorder or StereoAudioRecorder.';
     }
 
@@ -2114,7 +2114,7 @@ function MediaStreamRecorder(mediaStream, config) {
             recorderHints = 'video/vp8';
         }
 
-        if (typeof MediaRecorder.isTypeSupported === 'function' && recorderHints.mimeType) {
+        if (typeof MediaRecorder !== 'undefined' && typeof MediaRecorder.isTypeSupported === 'function' && recorderHints.mimeType) {
             if (!MediaRecorder.isTypeSupported(recorderHints.mimeType)) {
                 if (!config.disableLogs) {
                     console.warn('MediaRecorder API seems unable to record mimeType:', recorderHints.mimeType);
@@ -2125,18 +2125,21 @@ function MediaStreamRecorder(mediaStream, config) {
         }
 
         // using MediaRecorder API here
-        try {
-            mediaRecorder = new MediaRecorder(mediaStream, recorderHints);
-
-            // reset
-            config.mimeType = recorderHints.mimeType;
-        } catch (e) {
-            // chrome-based fallback
-            mediaRecorder = new MediaRecorder(mediaStream);
+        if (config.recorderMp3) {
+            mediaRecorder = config.recorderMp3;
+        } else {
+            try {
+                mediaRecorder = new MediaRecorder(mediaStream, recorderHints);
+                // reset
+                config.mimeType = recorderHints.mimeType;
+            } catch (e) {
+                // chrome-based fallback
+                mediaRecorder = new MediaRecorder(mediaStream);
+            }
         }
 
         // old hack?
-        if (recorderHints.mimeType && !MediaRecorder.isTypeSupported && 'canRecordMimeType' in mediaRecorder && mediaRecorder.canRecordMimeType(recorderHints.mimeType) === false) {
+        if (recorderHints.mimeType && typeof MediaRecorder !== 'undefined' && !MediaRecorder.isTypeSupported && 'canRecordMimeType' in mediaRecorder && mediaRecorder.canRecordMimeType(recorderHints.mimeType) === false) {
             if (!config.disableLogs) {
                 console.warn('MediaRecorder API seems unable to record mimeType:', recorderHints.mimeType);
             }
